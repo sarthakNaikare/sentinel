@@ -172,4 +172,49 @@ app.MapGet("/api/threats/top", async (NpgsqlDataSource db, int limit = 20) =>
     return rows;
 });
 
+
+app.MapGet("/api/chains", async (NpgsqlDataSource db) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    var cmd = new NpgsqlCommand("""
+        WITH kev_cves AS (
+            SELECT DISTINCT ON (cve_id)
+                cve_id, published_at, severity, cvss_score,
+                epss_score, description, kev_added_date
+            FROM cve_events
+            WHERE is_kev = TRUE AND epss_score IS NOT NULL
+            ORDER BY cve_id, published_at DESC
+        )
+        SELECT
+            a.cve_id, b.cve_id,
+            a.severity, b.severity,
+            a.cvss_score, b.cvss_score,
+            a.epss_score, b.epss_score,
+            ABS(a.kev_added_date - b.kev_added_date) AS days_apart,
+            a.description, b.description
+        FROM kev_cves a
+        JOIN kev_cves b
+          ON a.cve_id < b.cve_id
+         AND ABS(a.kev_added_date - b.kev_added_date) <= 3
+        ORDER BY days_apart ASC, a.epss_score DESC
+        LIMIT 50
+    """, conn);
+    var r = await cmd.ExecuteReaderAsync();
+    var rows = new List<object>();
+    while (await r.ReadAsync())
+        rows.Add(new {
+            source      = r.GetString(0),
+            target      = r.GetString(1),
+            source_sev  = r.IsDBNull(2)  ? null : r.GetString(2),
+            target_sev  = r.IsDBNull(3)  ? null : r.GetString(3),
+            source_cvss = r.IsDBNull(4)  ? (decimal?)null : r.GetDecimal(4),
+            target_cvss = r.IsDBNull(5)  ? (decimal?)null : r.GetDecimal(5),
+            source_epss = r.IsDBNull(6)  ? (double?)null  : r.GetDouble(6),
+            target_epss = r.IsDBNull(7)  ? (double?)null  : r.GetDouble(7),
+            days_apart  = r.GetInt32(8),
+            source_desc = r.IsDBNull(9)  ? null : r.GetString(9),
+            target_desc = r.IsDBNull(10) ? null : r.GetString(10)
+        });
+    return rows;
+});
 app.Run();
