@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import * as d3 from 'd3'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 
 const API = 'http://localhost:5184'
@@ -28,6 +29,125 @@ function PulsingDot({ color = '#1d9e75' }) {
   return (
     <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: color, marginRight: 6,
       animation: 'pulse 2s infinite' }} />
+  )
+}
+
+
+function ChainGraph() {
+  const [chains, setChains] = useState(null)
+  const [selected, setSelected] = useState(null)
+  const svgRef = useRef(null)
+
+  useEffect(() => {
+    fetch('http://localhost:5184/api/chains')
+      .then(r => r.json())
+      .then(data => { setChains(data) })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!chains || !svgRef.current) return
+    const svg = d3.select(svgRef.current)
+    svg.selectAll('*').remove()
+
+    const w = svgRef.current.clientWidth || 800
+    const h = 500
+
+    const nodes = {}
+    chains.forEach(c => {
+      if (!nodes[c.source]) nodes[c.source] = { id: c.source, sev: c.source_sev, epss: c.source_epss, desc: c.source_desc }
+      if (!nodes[c.target]) nodes[c.target] = { id: c.target, sev: c.target_sev, epss: c.target_epss, desc: c.target_desc }
+    })
+
+    const nodeArr = Object.values(nodes)
+    const linkArr = chains.map(c => ({ source: c.source, target: c.target, days: c.days_apart }))
+
+    const color = sev => ({ CRITICAL:'#e24b4a', HIGH:'#ef9f27', MEDIUM:'#378add', LOW:'#1d9e75' }[sev] || '#4b5563')
+
+    const sim = d3.forceSimulation(nodeArr)
+      .force('link', d3.forceLink(linkArr).id(d => d.id).distance(80))
+      .force('charge', d3.forceManyBody().strength(-200))
+      .force('center', d3.forceCenter(w/2, h/2))
+      .force('collision', d3.forceCollide().radius(30))
+      .force('x', d3.forceX(w/2).strength(0.05))
+      .force('y', d3.forceY(h/2).strength(0.05))
+
+    const g = svg.append('g')
+
+    svg.call(d3.zoom()
+      .scaleExtent([0.3, 3])
+      .filter(e => e.type !== 'wheel')
+      .on('zoom', e => g.attr('transform', e.transform)))
+
+    const link = g.append('g').selectAll('line')
+      .data(linkArr).join('line')
+      .attr('stroke', '#2a3545')
+      .attr('stroke-width', d => d.days === 0 ? 2 : 1)
+      .attr('stroke-dasharray', d => d.days === 0 ? null : '4 2')
+
+    const node = g.append('g').selectAll('circle')
+      .data(nodeArr).join('circle')
+      .attr('r', d => 6 + (d.epss || 0) * 14)
+      .attr('fill', d => color(d.sev))
+      .attr('opacity', 0.85)
+      .attr('cursor', 'pointer')
+      .on('click', (e, d) => setSelected(d))
+      .call(d3.drag()
+        .on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y })
+        .on('drag',  (e, d) => { d.fx=e.x; d.fy=e.y })
+        .on('end',   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null }))
+
+    const label = g.append('g').selectAll('text')
+      .data(nodeArr).join('text')
+      .text(d => d.id)
+      .attr('font-size', 9)
+      .attr('fill', '#94a3b8')
+      .attr('text-anchor', 'middle')
+      .attr('dy', -12)
+      .attr('pointer-events', 'none')
+
+    sim.on('tick', () => {
+      nodeArr.forEach(d => {
+        d.x = Math.max(20, Math.min(w - 20, d.x))
+        d.y = Math.max(20, Math.min(h - 20, d.y))
+      })
+      link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x).attr('y2', d => d.target.y)
+      node.attr('cx', d => d.x).attr('cy', d => d.y)
+      label.attr('x', d => d.x).attr('y', d => d.y)
+    })
+
+    return () => sim.stop()
+  }, [chains])
+
+  return (
+    <div style={{ display:'flex', flex:1, flexDirection:'column' }}>
+      <div style={{ padding:'8px 16px', fontSize:11, color:'#4b5563', borderBottom:'0.5px solid #1e2530',
+        display:'flex', justifyContent:'space-between' }}>
+        <span>chain graph — CVEs exploited within 72h windows — node size = EPSS score</span>
+        <span style={{ color:'#1d9e75' }}>{chains ? chains.length + ' chains detected' : 'loading...'}</span>
+      </div>
+      <div style={{ display:'flex', flex:1 }}>
+        <svg ref={svgRef} style={{ flex:1, background:'#080b10', minHeight:500 }} />
+        {selected && (
+          <div style={{ width:260, padding:14, borderLeft:'0.5px solid #1e2530', overflowY:'auto' }}>
+            <div style={{ fontSize:12, color:'#378add', fontWeight:500, marginBottom:8 }}>{selected.id}</div>
+            <div style={{ fontSize:10, color:'#4b5563', marginBottom:4 }}>severity</div>
+            <div style={{ fontSize:12, color: selected.sev==='CRITICAL'?'#e24b4a':'#ef9f27', marginBottom:8 }}>{selected.sev}</div>
+            <div style={{ fontSize:10, color:'#4b5563', marginBottom:4 }}>EPSS score</div>
+            <div style={{ fontSize:12, color:'#c8d0dc', marginBottom:8 }}>{selected.epss ? (selected.epss*100).toFixed(2)+'%' : '?'}</div>
+            <div style={{ fontSize:10, color:'#4b5563', marginBottom:4 }}>description</div>
+            <div style={{ fontSize:11, color:'#6b7280', lineHeight:1.6 }}>{selected.desc}</div>
+            <button onClick={() => setSelected(null)}
+              style={{ marginTop:12, padding:'4px 10px', background:'transparent',
+                border:'0.5px solid #2a3545', borderRadius:4, color:'#64748b',
+                cursor:'pointer', fontSize:11, fontFamily:'inherit' }}>
+              close
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -64,7 +184,7 @@ export default function App() {
         .map(([sev, count]) => ({ sev, count, fill: SEV_COLOR[sev] }))
     : []
 
-  const tabs = ['warroom', 'threats', 'scanner', 'carbon']
+  const tabs = ['warroom', 'threats', 'scanner', 'chain', 'carbon']
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -291,6 +411,10 @@ export default function App() {
       )}
 
       {/* Carbon dating tab */}
+      {tab === 'chain' && (
+        <ChainGraph />
+      )}
+
       {tab === 'carbon' && (
         <div style={{ padding:16 }}>
           <div style={{ fontSize:11, color:'#4b5563', marginBottom:12 }}>
