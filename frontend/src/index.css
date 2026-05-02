@@ -1,10 +1,122 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: #080b10;
-  color: #c8d0dc;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 13px;
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --gold: #f0a500;
+  --gold-dim: #b07800;
+  --gold-bright: #ffc840;
+  --crimson: #e03030;
+  --crimson-bright: #ff5555;
+  --cyan: #00d4ff;
+  --green: #00e87a;
+  --purple: #9b59ff;
+
+  /* Lighter hacker theme — more visibility */
+  --bg-void: #0a0d14;
+  --bg-deep: #0d1018;
+  --bg-panel: #111520;
+  --bg-card: #161b28;
+  --bg-hover: #1c2235;
+  --border: rgba(240,165,0,0.15);
+  --border-bright: rgba(240,165,0,0.45);
+
+  /* Much better text contrast */
+  --text-primary: #e8ecf8;
+  --text-secondary: #9aaac8;
+  --text-dim: #5a6a8a;
+  --text-muted: #3a4a6a;
+
+  --font: 'JetBrains Mono', monospace;
 }
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #0e1117; }
-::-webkit-scrollbar-thumb { background: #2a3545; border-radius: 2px; }
+
+html { font-size: 13px; }
+body { font-family: var(--font); background: var(--bg-void); color: var(--text-primary); overflow-x: hidden; cursor: none; }
+* { cursor: none !important; }
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+::selection { background: rgba(240,165,0,0.25); color: var(--gold-bright); }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideInRight { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slideInLeft { from{opacity:0;transform:translateX(-24px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slideInUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes scaleIn { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }
+@keyframes wipeInRight { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 0% 0 0)} }
+@keyframes wipeInLeft { from{clip-path:inset(0 0 0 100%)} to{clip-path:inset(0 0 0 0%)} }
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes glitch1 {
+  0%,94%,100% { clip-path: inset(0 0 100% 0); transform: translate(0); }
+  95% { clip-path: inset(20% 0 60% 0); transform: translate(-3px,1px); }
+  97% { clip-path: inset(60% 0 10% 0); transform: translate(3px,-1px); }
+  99% { clip-path: inset(40% 0 40% 0); transform: translate(-2px,2px); }
+}
+@keyframes glitch2 {
+  0%,96%,100% { clip-path: inset(0 0 100% 0); transform: translate(0); }
+  97% { clip-path: inset(10% 0 80% 0); transform: translate(3px,-2px); }
+  99% { clip-path: inset(70% 0 15% 0); transform: translate(-3px,2px); }
+}
+@keyframes boot {
+  0% { opacity:0; transform:scale(0.95) translateY(8px); filter:blur(8px); }
+  70% { opacity:1; transform:scale(1.005); filter:blur(0); }
+  100% { opacity:1; transform:scale(1); }
+}
+@keyframes cinematic {
+  0% { opacity:0; transform:scale(1.08); }
+  15% { opacity:1; transform:scale(1.03); }
+  85% { opacity:1; transform:scale(1); }
+  100% { opacity:0; transform:scale(0.97); }
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes radarSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes radarPing {
+  0% { transform:scale(0.3); opacity:0.8; }
+  100% { transform:scale(3); opacity:0; }
+}
+@keyframes hexPulse {
+  0%,100% { opacity:0.35; transform:scale(1); }
+  50% { opacity:0.6; transform:scale(1.04); }
+}
+@keyframes countUp {
+  from { opacity:0; transform:translateY(6px); }
+  to { opacity:1; transform:translateY(0); }
+}
+@keyframes borderGlow {
+  0%,100% { box-shadow:0 0 0 0 transparent; }
+  50% { box-shadow:0 0 12px 2px rgba(240,165,0,0.15); }
+}
+@keyframes dataFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes nodeIn {
+  from { opacity:0; transform:scale(0); }
+  to { opacity:1; transform:scale(1); }
+}
+@keyframes tabSlideIn {
+  from { opacity:0; transform:translateX(16px); }
+  to { opacity:1; transform:translateX(0); }
+}
+@keyframes tabSlideOut {
+  from { opacity:1; transform:translateX(0); }
+  to { opacity:0; transform:translateX(-16px); }
+}
+
+@keyframes tabSlideIn {
+  from { opacity:0; transform:translateX(20px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes tabSlideUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
