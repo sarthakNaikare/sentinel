@@ -884,13 +884,15 @@ function ScannerPage() {
 /* ─── ABOUT ───────────────────────────────────────────────────────── */
 function AboutPage() {
   return (
-    <div style={{flex:1,overflowY:"auto",padding:"32px 40px",maxWidth:900}}>
+    <div style={{flex:1,overflowY:"auto",padding:"28px 36px"}}>
       <div style={{fontSize:7,color:"#5a6a8a",letterSpacing:"0.3em",marginBottom:6,textTransform:"uppercase"}}>— Classified Brief —</div>
-      <div style={{fontSize:28,fontWeight:700,color:"#f0a500",marginBottom:4,letterSpacing:"0.08em"}}>ABOUT SENTINEL</div>
-      <div style={{fontSize:10,color:"#9aaac8",marginBottom:36}}>Built by Sarthak Naikare · 2026</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:24}}>
-        <div style={{padding:"20px 22px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6}}>
-          <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.22em",marginBottom:12}}>👤 THE BUILDER</div>
+      <div style={{fontSize:26,fontWeight:700,color:"#f0a500",marginBottom:2,letterSpacing:"0.08em"}}>ABOUT SENTINEL</div>
+      <div style={{fontSize:10,color:"#9aaac8",marginBottom:24}}>Built by Sarthak Naikare · 2026</div>
+
+      {/* Row 1 — Builder + Motivation */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+        <div style={{padding:"18px 20px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6}}>
+          <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.22em",marginBottom:10}}>👤 THE BUILDER</div>
           <a href="https://www.linkedin.com/in/sknaikare8500/" target="_blank" rel="noreferrer" data-hover
             style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,textDecoration:"none",padding:"8px 10px",background:"rgba(0,119,181,0.08)",border:"0.5px solid rgba(0,119,181,0.3)",borderRadius:4,transition:"all 0.2s"}}
             onMouseEnter={e=>e.currentTarget.style.background="rgba(0,119,181,0.16)"}
@@ -901,16 +903,16 @@ function AboutPage() {
               <div style={{fontSize:8,color:"rgba(0,119,181,0.9)",letterSpacing:"0.1em"}}>linkedin.com/in/sknaikare8500 ↗</div>
             </div>
           </a>
-          <div style={{fontSize:10,color:"#9aaac8",lineHeight:1.9,marginBottom:12}}>Full-stack developer and TimescaleDB practitioner. Sentinel was conceived while building time-series pipelines for astronomical and metrics data.</div>
-          {[["📧 Email","sarthaknaikare@gmail.com"],["🐙 GitHub","github.com/sarthakNaikare"],["⚙️ Stack","Python · .NET 8 · React · TimescaleDB"]].map(([k,v])=>(
-            <div key={k} style={{display:"flex",gap:10,fontSize:9,marginBottom:5}}>
-              <span style={{color:"#5a6a8a",minWidth:60}}>{k}</span>
+          <div style={{fontSize:10,color:"#9aaac8",lineHeight:1.8,marginBottom:10}}>Full-stack developer and TimescaleDB practitioner. Sentinel was conceived while building time-series pipelines for astronomical and metrics data.</div>
+          {[["📧","sarthaknaikare@gmail.com"],["🐙","github.com/sarthakNaikare"],["⚙️","Python · .NET 8 · React · TimescaleDB"]].map(([k,v])=>(
+            <div key={k} style={{display:"flex",gap:10,fontSize:9,marginBottom:5,alignItems:"flex-start"}}>
+              <span style={{flexShrink:0}}>{k}</span>
               <span style={{color:"#9aaac8"}}>{v}</span>
             </div>
           ))}
         </div>
-        <div style={{padding:"20px 22px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6}}>
-          <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.22em",marginBottom:12}}>💡 THE MOTIVATION</div>
+        <div style={{padding:"18px 20px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6}}>
+          <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.22em",marginBottom:10}}>💡 THE MOTIVATION</div>
           <div style={{fontSize:10,color:"#9aaac8",lineHeight:1.9}}>
             I was building on TimescaleDB — stellar observatories, self-healing metrics platforms — and noticed: <span style={{color:"#f0a500"}}>nobody was using time-series databases for threat intelligence.</span>
             <br/><br/>
@@ -918,16 +920,30 @@ function AboutPage() {
           </div>
         </div>
       </div>
-      <div style={{padding:"18px 22px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6,marginBottom:14}}>
-        <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.22em",marginBottom:10}}>🧠 THE IDEA</div>
-        <div style={{fontSize:10,color:"#9aaac8",lineHeight:1.9}}>
-          Every CVE platform answers: <span style={{color:"#e8ecf8"}}>"Does this CVE exist?"</span> Sentinel answers: <span style={{color:"#f0a500"}}>"How dangerous is this CVE right now, vs yesterday, and tomorrow?"</span>
-          <br/><br/>
-          Only possible with TimescaleDB. Continuous aggregates, hyperfunctions, and temporal operators make it the only database capable of living threat intelligence at this scale.
+
+      {/* Row 2 — The Idea full width */}
+      <div style={{padding:"16px 20px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6,marginBottom:14}}>
+        <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.22em",marginBottom:8}}>🧠 THE IDEA</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          <div style={{fontSize:10,color:"#9aaac8",lineHeight:1.9}}>
+            Every CVE platform answers: <span style={{color:"#e8ecf8"}}>"Does this CVE exist?"</span> Sentinel answers: <span style={{color:"#f0a500"}}>"How dangerous is this CVE right now, vs yesterday, and tomorrow?"</span>
+          </div>
+          <div style={{fontSize:10,color:"#9aaac8",lineHeight:1.9}}>
+            Only possible with TimescaleDB. Continuous aggregates, hyperfunctions, and temporal operators make it the only database capable of living threat intelligence at this scale.
+          </div>
         </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-        {[["☢ Carbon Dating","CVE exposure age via time_weight hyperfunction. No other tool shows this."],["🔗 Chain Detection","Window functions detect CVEs exploited within 72h — real attack chains."],["📊 EPSS Trajectory","Daily snapshots → caggs compute decay curves automatically."],["🔐 Cryptographic Integrity","Every batch SHA-256 hashed. Data integrity verifiable end-to-end."],["⚡ Hierarchical Caggs","1h→24h→7d hierarchy. Dashboard never touches raw data. Sub-10ms."],["🛡 5 Sources","NVD · CISA KEV · EPSS · OSV · GitHub Advisory. All free, all authoritative."]].map(([title,desc])=>(
+
+      {/* Row 3 — 6 feature cards in 3x2 grid */}
+      <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.22em",marginBottom:10}}>⬡ WHAT MAKES IT ONE OF A KIND</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:14}}>
+        {[["☢ Carbon Dating","CVE exposure age via time_weight hyperfunction. No other tool shows how long a vuln has been in your stack."],
+          ["🔗 Chain Detection","Window functions detect CVEs exploited within 72h — real attack chains, not guesses."],
+          ["📊 EPSS Trajectory","Daily snapshots → caggs compute decay curves automatically."],
+          ["🔐 Cryptographic Integrity","Every batch SHA-256 hashed. Data integrity verifiable end-to-end."],
+          ["⚡ Hierarchical Caggs","1h→24h→7d hierarchy. Dashboard never touches raw data. Sub-10ms."],
+          ["🛡 5 Authoritative Sources","NVD · CISA KEV · EPSS · OSV · GitHub Advisory. All free, all verified."]
+        ].map(([title,desc])=>(
           <div key={title} style={{padding:"12px 14px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6,transition:"all 0.2s"}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--border-bright)";e.currentTarget.style.background="var(--bg-card)"}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.background="var(--bg-panel)"}}>
@@ -936,22 +952,58 @@ function AboutPage() {
           </div>
         ))}
       </div>
-      <div style={{padding:"22px",background:"rgba(240,165,0,0.04)",border:"1px solid rgba(240,165,0,0.15)",borderRadius:6,textAlign:"center",marginBottom:14}}>
-        <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.3em",marginBottom:10}}>THE MOTTO</div>
-        <div style={{fontSize:15,fontWeight:700,color:"#e8ecf8",lineHeight:1.6}}>"CVEs are not records. <span style={{color:"#f0a500"}}>They are time-series events.</span>"</div>
-      </div>
-      <div style={{padding:"14px 18px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div>
-          <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:5}}>📬 REQUEST ACCESS</div>
-          <div style={{fontSize:9,color:"#9aaac8"}}>Sentinel is not public software. Access granted by author on request.</div>
+
+      {/* Row 4 — Mythos card full width */}
+      <div style={{padding:"20px 24px",background:"rgba(224,48,48,0.04)",border:"1px solid rgba(224,48,48,0.2)",borderRadius:8,marginBottom:14,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,transparent,#e03030,transparent)"}}/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
+          <div>
+            <div style={{fontSize:8,color:"rgba(224,48,48,0.6)",letterSpacing:"0.3em",marginBottom:8}}>⚔ THE ADVERSARY CONTEXT</div>
+            <div style={{fontSize:16,fontWeight:700,color:"#e8ecf8",marginBottom:10}}>Built to counter <span style={{color:"#e03030"}}>Mythos</span></div>
+            <div style={{fontSize:10,color:"#9aaac8",lineHeight:1.9,marginBottom:12}}>
+              <span style={{color:"#e03030",fontWeight:700}}>Mythos</span> is the first AI model capable of finding and chaining zero-days autonomously — a new class of threat actor that operates faster than any human security team can respond.
+              <br/><br/>
+              Sentinel is the <span style={{color:"#f0a500"}}>defensive counterpart</span>. While Mythos exploits temporal vulnerability windows, Sentinel maps them — giving defenders the same temporal awareness that autonomous attackers already have.
+            </div>
+            <div style={{padding:"8px 12px",background:"rgba(224,48,48,0.06)",border:"0.5px solid rgba(224,48,48,0.15)",borderRadius:4,fontSize:9,color:"#9aaac8",lineHeight:1.7}}>
+              <span style={{color:"#e03030",fontWeight:700}}>⚠ New threat paradigm:</span> Autonomous AI attackers don{"'"}t wait for patch cycles. They scan, chain, and exploit in hours.
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {[["⚔ MYTHOS — ATTACKER",["Finds zero-days autonomously","Chains CVEs within 72h","Faster than human response","No sleep. No mistakes."],"#e03030"],
+              ["🛡 SENTINEL — DEFENDER",["Maps vulnerability windows","Detects chains before exploit","EPSS = attack probability","Carbon dating = exposure time"],"#f0a500"]
+            ].map(([title,items,color])=>(
+              <div key={title} style={{padding:"12px 14px",background:"rgba(10,13,20,0.8)",border:"0.5px solid "+color+"33",borderRadius:5}}>
+                <div style={{fontSize:9,fontWeight:700,color:color,marginBottom:8,letterSpacing:"0.08em"}}>{title}</div>
+                {items.map(l=>(
+                  <div key={l} style={{fontSize:8,color:"#9aaac8",marginBottom:4,display:"flex",gap:6,lineHeight:1.5}}>
+                    <span style={{color:color,flexShrink:0}}>›</span>{l}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
-        <div style={{fontSize:11,color:"#f0a500",fontWeight:700}}>sarthaknaikare@gmail.com</div>
+      </div>
+
+      {/* Row 5 — Motto + Access side by side */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+        <div style={{padding:"20px",background:"rgba(240,165,0,0.04)",border:"1px solid rgba(240,165,0,0.15)",borderRadius:6,textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+          <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.3em",marginBottom:10}}>THE MOTTO</div>
+          <div style={{fontSize:14,fontWeight:700,color:"#e8ecf8",lineHeight:1.7}}>"CVEs are not records.<br/><span style={{color:"#f0a500"}}>They are time-series events.</span>"</div>
+        </div>
+        <div style={{padding:"20px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+          <div>
+            <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:8}}>📬 REQUEST ACCESS</div>
+            <div style={{fontSize:10,color:"#9aaac8",lineHeight:1.7,marginBottom:14}}>Sentinel is not public software. Access is granted by the author on request. Built for TigerData — the team behind TimescaleDB.</div>
+          </div>
+          <div style={{fontSize:12,color:"#f0a500",fontWeight:700}}>sarthaknaikare@gmail.com</div>
+        </div>
       </div>
     </div>
   )
 }
 
-/* ─── TECH STACK ──────────────────────────────────────────────────── */
 function TechPage() {
   return (
     <div style={{flex:1,overflowY:"auto",padding:"32px 40px"}}>
