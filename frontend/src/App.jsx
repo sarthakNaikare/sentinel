@@ -1073,9 +1073,9 @@ export default function App() {
   const [warSearch,setWarSearch]=useState("")
   const [threatSearch,setThreatSearch]=useState("")
 
-  const metrics=useFetch(`${API}/api/metrics`,10000)
-  const threats=useFetch(`${API}/api/threats/top?limit=50`,30000)
-  const heatmap=useFetch(`${API}/api/heatmap`,60000)
+  const metrics=useFetch(`${API}/api/metrics`,60000)
+  const threats=useFetch(`${API}/api/threats/top?limit=30`,120000)
+  const heatmap=useFetch(`${API}/api/heatmap`,300000)
 
   useEffect(()=>{ const t=setInterval(()=>setClock(new Date()),1000); return ()=>clearInterval(t) },[])
   useEffect(()=>{

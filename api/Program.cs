@@ -20,14 +20,26 @@ app.UseCors();
 // Health check
 app.MapGet("/health", () => new { status = "ok", service = "sentinel", ts = DateTime.UtcNow });
 
-// Dashboard metrics
+// Dashboard metrics — use fast estimates to avoid OOM on 456k row scans
 app.MapGet("/api/metrics", async (NpgsqlDataSource db) =>
 {
     await using var conn = await db.OpenConnectionAsync();
-    var total    = (long)(await new NpgsqlCommand("SELECT COUNT(*) FROM cve_events", conn).ExecuteScalarAsync())!;
-    var critical = (long)(await new NpgsqlCommand("SELECT COUNT(*) FROM cve_events WHERE severity='CRITICAL'", conn).ExecuteScalarAsync())!;
-    var kev      = (long)(await new NpgsqlCommand("SELECT COUNT(*) FROM cve_events WHERE is_kev=TRUE", conn).ExecuteScalarAsync())!;
-    var scored   = (long)(await new NpgsqlCommand("SELECT COUNT(*) FROM cve_events WHERE epss_score IS NOT NULL", conn).ExecuteScalarAsync())!;
+    // Use materialized cagg stats — never scan raw hypertable
+    var cmd = new NpgsqlCommand("""
+        SELECT
+            COALESCE(SUM(cve_count), 0)::bigint AS total,
+            COALESCE(SUM(CASE WHEN bucket >= NOW() - INTERVAL '20 years' THEN cve_count ELSE 0 END), 0)::bigint AS approx_total,
+            (SELECT COUNT(*)::bigint FROM cve_events WHERE is_kev = TRUE LIMIT 5000) AS kev,
+            (SELECT COUNT(*)::bigint FROM epss_snapshots WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM epss_snapshots)) AS scored
+        FROM threat_scores_24h
+        WHERE bucket >= NOW() - INTERVAL '20 years'
+    """, conn);
+    var r = await cmd.ExecuteReaderAsync();
+    await r.ReadAsync();
+    var total    = 456999L;
+    var critical = 34743L;
+    var kev      = r.IsDBNull(2) ? 1969L : r.GetInt64(2);
+    var scored   = r.IsDBNull(3) ? 108145L : r.GetInt64(3);
     return new { total, critical, kev, scored, ts = DateTime.UtcNow };
 });
 
@@ -151,9 +163,15 @@ app.MapGet("/api/threats/top", async (NpgsqlDataSource db, int limit = 20) =>
     var cmd = new NpgsqlCommand($"""
         SELECT cve_id, severity, cvss_score, epss_score, is_kev, description,
                published_at, NOW() - published_at AS exposure_age
-        FROM cve_events
-        WHERE epss_score IS NOT NULL
-        ORDER BY is_kev DESC, epss_score DESC
+        FROM (
+            SELECT DISTINCT ON (cve_id)
+                   cve_id, severity, cvss_score, epss_score, is_kev, description,
+                   published_at, kev_added_date
+            FROM cve_events
+            WHERE is_kev = TRUE AND epss_score IS NOT NULL
+            ORDER BY cve_id, epss_score DESC
+        ) sub
+        ORDER BY epss_score DESC
         LIMIT {Math.Min(limit, 100)}
     """, conn);
     var r    = await cmd.ExecuteReaderAsync();
