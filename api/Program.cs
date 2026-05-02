@@ -217,4 +217,21 @@ app.MapGet("/api/chains", async (NpgsqlDataSource db) =>
         });
     return rows;
 });
+
+// AI Remediation — proxy to Anthropic
+app.MapPost("/api/remediate", async (HttpContext ctx) =>
+{
+    using var reader = new StreamReader(ctx.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var key = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") ?? "";
+    using var http = new HttpClient();
+    http.DefaultRequestHeaders.Add("x-api-key", key);
+    http.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
+    var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+    var response = await http.PostAsync("https://api.anthropic.com/v1/messages", content);
+    var result = await response.Content.ReadAsStringAsync();
+    ctx.Response.ContentType = "application/json";
+    await ctx.Response.WriteAsync(result);
+});
+
 app.Run();
