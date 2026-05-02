@@ -1,0 +1,175 @@
+using Npgsql;
+using DotNetEnv;
+
+Env.Load("../config/.env");
+
+var builder = WebApplication.CreateBuilder(args);
+var rawUrl = Environment.GetEnvironmentVariable("TIMESCALE_URL")!;
+var uri = new Uri(rawUrl.Split("?")[0].Replace("postgresql://", "https://"));
+var userInfo = uri.UserInfo.Split(":");
+var connStr = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={Uri.UnescapeDataString(userInfo[0])};Password={Uri.UnescapeDataString(userInfo[1])};SSL Mode=Require;Trust Server Certificate=true";
+
+builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(connStr));
+
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+
+var app = builder.Build();
+app.UseCors();
+
+// Health check
+app.MapGet("/health", () => new { status = "ok", service = "sentinel", ts = DateTime.UtcNow });
+
+// Dashboard metrics
+app.MapGet("/api/metrics", async (NpgsqlDataSource db) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    var total    = (long)(await new NpgsqlCommand("SELECT COUNT(*) FROM cve_events", conn).ExecuteScalarAsync())!;
+    var critical = (long)(await new NpgsqlCommand("SELECT COUNT(*) FROM cve_events WHERE severity='CRITICAL'", conn).ExecuteScalarAsync())!;
+    var kev      = (long)(await new NpgsqlCommand("SELECT COUNT(*) FROM cve_events WHERE is_kev=TRUE", conn).ExecuteScalarAsync())!;
+    var scored   = (long)(await new NpgsqlCommand("SELECT COUNT(*) FROM cve_events WHERE epss_score IS NOT NULL", conn).ExecuteScalarAsync())!;
+    return new { total, critical, kev, scored, ts = DateTime.UtcNow };
+});
+
+// Live CVE feed — latest 50
+app.MapGet("/api/cves", async (NpgsqlDataSource db, string? severity, bool? kev_only, int limit = 50) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    var where = new List<string>();
+    if (severity != null) where.Add($"severity = '{severity.ToUpper()}'");
+    if (kev_only == true) where.Add("is_kev = TRUE");
+    var whereStr = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
+    var sql = $"""
+        SELECT cve_id, published_at, severity, cvss_score,
+               epss_score, is_kev, description
+        FROM cve_events
+        {whereStr}
+        ORDER BY published_at DESC
+        LIMIT {Math.Min(limit, 200)}
+    """;
+    var cmd  = new NpgsqlCommand(sql, conn);
+    var reader = await cmd.ExecuteReaderAsync();
+    var rows = new List<object>();
+    while (await reader.ReadAsync())
+        rows.Add(new {
+            cve_id      = reader.GetString(0),
+            published   = reader.GetDateTime(1),
+            severity    = reader.IsDBNull(2) ? null : reader.GetString(2),
+            cvss        = reader.IsDBNull(3) ? (decimal?)null : reader.GetDecimal(3),
+            epss        = reader.IsDBNull(4) ? (double?)null : reader.GetDouble(4),
+            is_kev      = reader.GetBoolean(5),
+            description = reader.IsDBNull(6) ? null : reader.GetString(6)?[..Math.Min(200, reader.GetString(6).Length)]
+        });
+    return rows;
+});
+
+// Single CVE detail
+app.MapGet("/api/cves/{cveId}", async (NpgsqlDataSource db, string cveId) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    var cmd = new NpgsqlCommand("""
+        SELECT cve_id, published_at, severity, cvss_score, cvss_vector,
+               epss_score, epss_percentile, is_kev, kev_added_date,
+               exploit_available, description, affected_packages, patch_available
+        FROM cve_events
+        WHERE cve_id = @id
+        ORDER BY published_at DESC LIMIT 1
+    """, conn);
+    cmd.Parameters.AddWithValue("id", cveId.ToUpper());
+    var r = await cmd.ExecuteReaderAsync();
+    if (!await r.ReadAsync()) return Results.NotFound(new { error = "CVE not found" });
+    return Results.Ok(new {
+        cve_id            = r.GetString(0),
+        published         = r.GetDateTime(1),
+        severity          = r.IsDBNull(2)  ? null : r.GetString(2),
+        cvss_score        = r.IsDBNull(3)  ? (decimal?)null : r.GetDecimal(3),
+        cvss_vector       = r.IsDBNull(4)  ? null : r.GetString(4),
+        epss_score        = r.IsDBNull(5)  ? (double?)null : r.GetDouble(5),
+        epss_percentile   = r.IsDBNull(6)  ? (double?)null : r.GetDouble(6),
+        is_kev            = r.GetBoolean(7),
+        kev_added_date    = r.IsDBNull(8)  ? null : r.GetFieldValue<DateOnly>(8).ToString(),
+        exploit_available = r.GetBoolean(9),
+        description       = r.IsDBNull(10) ? null : r.GetString(10),
+        affected_packages = r.IsDBNull(11) ? null : r.GetFieldValue<string[]>(11),
+        patch_available   = r.GetBoolean(12)
+    });
+});
+
+// Threat heatmap — 1h cagg data for dashboard
+app.MapGet("/api/heatmap", async (NpgsqlDataSource db) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    var cmd = new NpgsqlCommand("""
+        SELECT bucket, severity, cve_count, avg_epss, exploit_count
+        FROM threat_scores_1h
+        WHERE bucket > NOW() - INTERVAL '24 hours'
+        ORDER BY bucket ASC
+    """, conn);
+    var r    = await cmd.ExecuteReaderAsync();
+    var rows = new List<object>();
+    while (await r.ReadAsync())
+        rows.Add(new {
+            bucket        = r.GetDateTime(0),
+            severity      = r.IsDBNull(1) ? null : r.GetString(1),
+            cve_count     = r.GetInt64(2),
+            avg_epss      = r.IsDBNull(3) ? (double?)null : r.GetDouble(3),
+            exploit_count = r.GetInt64(4)
+        });
+    return rows;
+});
+
+// Carbon dating — EPSS trajectory for a CVE
+app.MapGet("/api/carbon/{cveId}", async (NpgsqlDataSource db, string cveId) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    var cmd = new NpgsqlCommand("""
+        SELECT bucket, avg_epss, max_epss
+        FROM epss_trends_24h
+        WHERE cve_id = @id
+        ORDER BY bucket ASC
+    """, conn);
+    cmd.Parameters.AddWithValue("id", cveId.ToUpper());
+    var r    = await cmd.ExecuteReaderAsync();
+    var rows = new List<object>();
+    while (await r.ReadAsync())
+        rows.Add(new {
+            date     = r.GetFieldValue<DateOnly>(0).ToString(),
+            avg_epss = r.IsDBNull(1) ? (double?)null : r.GetDouble(1),
+            max_epss = r.IsDBNull(2) ? (double?)null : r.GetDouble(2)
+        });
+    return new {
+        cve_id = cveId.ToUpper(),
+        points = rows,
+        days   = rows.Count
+    };
+});
+
+// Top threats — highest EPSS + KEV
+app.MapGet("/api/threats/top", async (NpgsqlDataSource db, int limit = 20) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    var cmd = new NpgsqlCommand($"""
+        SELECT cve_id, severity, cvss_score, epss_score, is_kev, description,
+               published_at, NOW() - published_at AS exposure_age
+        FROM cve_events
+        WHERE epss_score IS NOT NULL
+        ORDER BY is_kev DESC, epss_score DESC
+        LIMIT {Math.Min(limit, 100)}
+    """, conn);
+    var r    = await cmd.ExecuteReaderAsync();
+    var rows = new List<object>();
+    while (await r.ReadAsync())
+        rows.Add(new {
+            cve_id       = r.GetString(0),
+            severity     = r.IsDBNull(1) ? null : r.GetString(1),
+            cvss         = r.IsDBNull(2) ? (decimal?)null : r.GetDecimal(2),
+            epss         = r.IsDBNull(3) ? (double?)null : r.GetDouble(3),
+            is_kev       = r.GetBoolean(4),
+            description  = r.IsDBNull(5) ? null : r.GetString(5)?[..Math.Min(150, r.GetString(5).Length)],
+            published    = r.GetDateTime(6),
+            exposure_age = r.GetTimeSpan(7).Days + " days"
+        });
+    return rows;
+});
+
+app.Run();
