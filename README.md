@@ -1,121 +1,128 @@
-# SENTINEL
+<div align="center">
+
+# 🛡️ SENTINEL
+
 ### Real-time Temporal Threat Intelligence Engine
 
-> Built on TimescaleDB · Ghostgres · .NET 8 · Python · React
+![TimescaleDB](https://img.shields.io/badge/TimescaleDB-2.26.3-orange?style=flat-square&logo=postgresql)
+![.NET](https://img.shields.io/badge/.NET-8.0-purple?style=flat-square&logo=dotnet)
+![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python)
+![React](https://img.shields.io/badge/React-Vite-cyan?style=flat-square&logo=react)
+![License](https://img.shields.io/badge/Access-By_Request_Only-red?style=flat-square)
+
+> **The first threat intelligence engine built natively on TimescaleDB.**
+> CVEs are not records. They are time-series events.
+
+</div>
 
 ---
 
-## What is Sentinel?
+## 🧠 What makes Sentinel different?
 
-Sentinel is a living threat intelligence database that doesn't just *store* CVEs — it understands their decay, mutation, and exploitability over time using TimescaleDB's native time-series superpowers.
+Every existing CVE platform stores vulnerabilities as static records. Sentinel treats them as **time-series events** — tracking how dangerous each vulnerability becomes over time using EPSS trajectory, KEV confirmation, and temporal chain detection.
 
-Every existing CVE platform stores vulnerabilities as static records. Sentinel treats them as time-series events — tracking how dangerous each vulnerability becomes over time using EPSS trajectory, KEV confirmation, and temporal chain detection.
+This is only possible with TimescaleDB.
 
-> "This product uses data from the NVD API but is not endorsed or certified by the NVD."
-
----
-
-## The problem nobody solved
-
-CVE databases (NVD, OSV, Mitre) are static. They store vulnerabilities as records. They have no concept of *time-aware exploitability* — the idea that a vulnerability's danger evolves based on patch rates, exploit availability in the wild, affected system exposure, and temporal clustering with related CVEs.
-
-TimescaleDB was literally built for this. Sentinel is the first tool to use it this way.
+> ⚠️ This product uses data from the NVD API but is not endorsed or certified by the NVD.
 
 ---
 
-## Data sources — 5 authoritative free feeds
+## 📡 Data Sources — 5 authoritative free feeds
 
 | Source | What it provides | Authority |
-|--------|-----------------|-----------|
-| NVD API v2 | 456k+ CVEs, CVSS scores, KEV fields | US Gov — nist.gov |
-| CISA KEV catalog | Confirmed in-the-wild exploits | US Gov — cisa.gov |
-| EPSS (FIRST.org) | 30-day exploit probability scores | FIRST.org |
-| OSV.dev | Ecosystem package vulnerabilities | Google |
-| GitHub Advisory | Supply chain vulnerabilities | GitHub |
+|--------|-----------------|----------|
+| 🏛️ NVD API v2 | 456k+ CVEs, CVSS scores, KEV fields | US Gov — nist.gov |
+| 🚨 CISA KEV | Confirmed in-the-wild exploits | US Gov — cisa.gov |
+| 📊 EPSS | 30-day exploit probability scores | FIRST.org |
+| 🔍 OSV.dev | Ecosystem package vulnerabilities | Google |
+| 🐙 GitHub Advisory | Supply chain vulnerabilities | GitHub |
 
 ---
 
-## TimescaleDB architecture
-cve_events (hypertable)
-└── 7-day chunks
-└── Hypercore columnar compression (88% savings)
-└── Compression after 7 days
-└── Retention: 2 years
-epss_snapshots (hypertable)
-└── 30-day chunks
-└── Daily EPSS score per CVE → carbon dating curves
-ingestion_log (hypertable)
-└── SHA-256 batch hashing → cryptographic integrity
-Continuous aggregates (3-level hierarchy)
-raw cve_events
-└── threat_scores_1h   (refresh: every 1h)
-└── threat_scores_24h  (refresh: every 1d)
-└── threat_scores_7d   (refresh: every 7d)
-epss_snapshots
-└── epss_trends_24h    (refresh: every 1d)
----
+## 🏗️ TimescaleDB Architecture
 
-## Key features
 
-**Carbon dating** — Every CVE gets an exposure age computed from your deployment date, weighted by EPSS score using TimescaleDB's time_weight hyperfunction. See exactly how long that vulnerability has been sitting in your stack.
-
-**Chain risk detection** — TimescaleDB window functions detect CVEs that tend to get exploited together within 72-hour windows. Sentinel shows you the full attack chain, not just individual vulnerabilities.
-
-**Stack scanner** — Drop in a requirements.txt, package.json, or go.mod. Sentinel resolves every dependency against OSV + NVD and returns a prioritised threat report enriched with EPSS scores and KEV flags.
-
-**Cryptographic integrity** — Every ingestion batch gets a SHA-256 hash stored in the ingestion_log hypertable. Users can verify their CVE data hasn't been tampered with.
-
-**LEV scoring** — NIST's 2025 Likely Exploited Vulnerabilities metric, computed natively using TimescaleDB hyperfunctions on historical EPSS snapshots.
 
 ---
 
-## Tech stack
+## ✨ Key Features
 
-- **TimescaleDB** — hypertables, continuous aggregates, Hypercore compression, retention policies
-- **Ghostgres** — per-user isolated Postgres instances for stack profile isolation
-- **.NET 8** — minimal API, Npgsql, async endpoints
-- **Python** — async ingestion workers, COPY-based bulk insert
-- **.React** — war room dashboard, live heatmap, chain graph, carbon dating UI
-- **Electron** — cross-platform desktop installer with Keygen license gating
+### ☢️ Carbon Dating
+Every CVE gets an **exposure age** computed from your deployment date, weighted by EPSS using TimescaleDB  hyperfunction. See exactly how long a vulnerability has been sitting in your stack — down to the day.
+
+### 🔗 Chain Risk Detection
+TimescaleDB window functions detect CVEs that are exploited together within **72-hour windows** historically. Sentinel shows you the full attack chain — not just individual vulnerabilities.
+
+### 🔎 Stack Scanner
+Drop in a , , or . Sentinel resolves every dependency against OSV + NVD and returns a prioritised threat report enriched with EPSS scores and KEV flags — in under 1 second.
+
+### 🔐 Cryptographic Integrity
+Every ingestion batch gets a **SHA-256 hash** stored in the  hypertable. Users can verify their CVE data has not been tampered with.
+
+### 📉 LEV Scoring
+NIST 2025 Likely Exploited Vulnerabilities metric, computed natively using TimescaleDB hyperfunctions on historical EPSS snapshots.
 
 ---
 
-## Database stats
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| 🗄️ Database | TimescaleDB 2.26.3 — hypertables, caggs, Hypercore, retention |
+| 👻 Isolation | Ghostgres — per-user isolated Postgres instances |
+| ⚙️ API | .NET 8 minimal API — Npgsql, async, streaming |
+| 🐍 Ingestion | Python 3.12 — asyncpg, COPY-based bulk insert |
+| ⚛️ Frontend | React + Vite — war room, heatmap, chain graph |
+| 📦 Desktop | Electron — cross-platform installer, Keygen license |
+
+---
+
+## 📊 Live Database Stats
 
 | Metric | Value |
 |--------|-------|
-| Total CVEs | 456,112+ |
-| Critical severity | 34,687 |
-| KEV confirmed | 1,964 |
-| EPSS scored | 108,145 |
-| DB chunks | 1,600+ |
-| Compression savings | 88% |
-| Ingestion speed | ~100k rows/sec via COPY |
+| Total CVEs ingested | **456,112+** |
+| Critical severity | **34,687** |
+| KEV confirmed exploited | **1,964** |
+| EPSS scored | **108,145** |
+| DB chunks | **1,600+** |
+| Compression savings | **88%** |
+| Ingestion speed | **~100k rows/sec** via COPY |
 
 ---
 
-## API endpoints
-GET /health                     — service health
-GET /api/metrics                — dashboard headline stats
-GET /api/cves                   — live CVE feed with filters
-GET /api/cves/{id}              — single CVE detail
-GET /api/threats/top            — highest EPSS + KEV ranked
-GET /api/heatmap                — 1h cagg data for war room
-GET /api/carbon/{id}            — EPSS decay curve for carbon dating
----
+## 🔌 API Endpoints
 
-## Access
 
-Sentinel is not public software. Access is granted by the author on request.
-
-**Request access:** [your email here]
 
 ---
 
-## Note on service naming
+## 📸 Screenshots
 
-Sentinel runs on a dedicated TimescaleDB service alongside the resonance project. Both share a single Timescale Cloud instance for credit efficiency during development. All Sentinel tables are isolated in their own schema.
+| TimescaleDB Explorer | CVE Hypertable | War Room Dashboard |
+|---------------------|----------------|--------------------|
+| ![](screenshots/01_timescaledb_explorer.png) | ![](screenshots/02_cve_events_hypertable.png) | coming soon |
 
 ---
+
+## 🔒 Access
+
+Sentinel is **not public software**. Access is granted by the author on request.
+
+📧 **Request access:** sarthaknaikare@gmail.com
+
+---
+
+## 📝 Note on infrastructure
+
+Sentinel runs on a dedicated TimescaleDB service alongside the  project, sharing a single Timescale Cloud instance for credit efficiency during development. All Sentinel tables are isolated in their own schema.
+
+---
+
+<div align="center">
 
 *Built to impress the team at TigerData. Powered by TimescaleDB.*
+
+**Sarthak Naikare** · sarthaknaikare@gmail.com
+
+</div>
