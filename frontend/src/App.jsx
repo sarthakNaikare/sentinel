@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import * as d3 from "d3"
 
-const API = "http://localhost:5184"
+const API = "https://sentinel-production-b4c7.up.railway.app"
 const SEV = { CRITICAL:"#e03030", HIGH:"#f0a500", MEDIUM:"#00d4ff", LOW:"#00e87a", UNKNOWN:"#5a6a8a" }
 
 function useFetch(url, interval=30000) {
