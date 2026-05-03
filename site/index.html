@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SENTINEL — Threat Intelligence Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#020508;--accent:#00ffe0;--text:#c8dde8;--dim:#3a5568;--card:#0a1520;--border:#0e2030; }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,224,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,224,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:1}
+  .orb{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0}
+  .orb1{width:700px;height:700px;background:rgba(0,255,224,0.05);top:-250px;left:-250px}
+  .orb2{width:500px;height:500px;background:rgba(255,60,95,0.04);bottom:-150px;right:-150px}
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 48px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,255,224,0.08);background:rgba(2,5,8,0.9);backdrop-filter:blur(20px)}
+  .logo{font-family:'Share Tech Mono',monospace;font-size:18px;color:var(--accent);letter-spacing:4px;text-decoration:none}
+  .nav-links{display:flex;gap:32px}
+  .nav-link{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;text-decoration:none;transition:color 0.2s}
+  .nav-link:hover{color:var(--accent)}
+  main{position:relative;z-index:2}
+  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px}
+  .hero-label{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:6px;color:var(--accent);opacity:0.7;margin-bottom:32px;animation:fadeUp 0.8s ease both}
+  .hero-title{font-size:clamp(72px,13vw,150px);font-weight:800;line-height:0.88;letter-spacing:-3px;color:#fff;margin-bottom:8px;animation:fadeUp 0.8s 0.1s ease both}
+  .hero-title span{color:var(--accent);text-shadow:0 0 80px rgba(0,255,224,0.35)}
+  .hero-version{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--dim);letter-spacing:3px;margin-bottom:36px;animation:fadeUp 0.8s 0.2s ease both}
+  .hero-desc{font-size:17px;color:var(--text);opacity:0.65;max-width:520px;line-height:1.75;margin-bottom:52px;animation:fadeUp 0.8s 0.3s ease both}
+  .platforms{display:flex;gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:20px;animation:fadeUp 0.8s 0.4s ease both}
+  .platform-card{background:var(--card);padding:32px 44px;display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;transition:background 0.25s;position:relative;overflow:hidden;min-width:190px}
+  .platform-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent);transform:scaleX(0);transition:transform 0.3s}
+  .platform-card:hover{background:#0d1f30}
+  .platform-card:hover::after{transform:scaleX(1)}
+  .p-icon{font-size:30px;margin-bottom:4px}
+  .p-name{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:4px;color:var(--accent)}
+  .p-file{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:1px}
+  .p-badge{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:3px 10px;border:1px solid rgba(0,255,224,0.25);color:var(--accent);margin-top:4px}
+  .file-meta{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;animation:fadeUp 0.8s 0.5s ease both}
+  .file-meta span{color:var(--accent);opacity:0.6}
+  .stats{display:flex;margin-top:64px;border:1px solid var(--border);background:var(--card);max-width:720px;width:100%;animation:fadeUp 0.8s 0.6s ease both}
+  .stat{flex:1;padding:26px 16px;text-align:center;border-right:1px solid var(--border)}
+  .stat:last-child{border-right:none}
+  .stat-val{font-family:'Share Tech Mono',monospace;font-size:24px;color:var(--accent);display:block;margin-bottom:6px}
+  .stat-label{font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
+  .features{padding:100px 48px;max-width:1100px;margin:0 auto}
+  .section-label{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:6px;color:var(--accent);opacity:0.55;margin-bottom:48px;display:flex;align-items:center;gap:16px}
+  .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+  .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--border);border:1px solid var(--border)}
+  .feature{background:var(--card);padding:40px 36px;position:relative;overflow:hidden;transition:background 0.3s}
+  .feature:hover{background:#0d1f30}
+  .feature::before{content:'';position:absolute;top:0;left:0;width:2px;height:0;background:var(--accent);transition:height 0.35s}
+  .feature:hover::before{height:100%}
+  .feature-num{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--accent);opacity:0.4;margin-bottom:20px}
+  .feature h3{font-size:19px;font-weight:700;color:#fff;margin-bottom:12px}
+  .feature p{font-size:14px;color:var(--text);opacity:0.55;line-height:1.75}
+  .requirements{padding:80px 48px;max-width:1100px;margin:0 auto}
+  .req-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--border);border:1px solid var(--border)}
+  .req-item{background:var(--card);padding:28px 32px;display:flex;flex-direction:column;gap:8px}
+  .req-key{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--dim)}
+  .req-val{font-size:14px;font-weight:700;color:var(--text)}
+  .cta{padding:100px 48px;text-align:center;border-top:1px solid var(--border)}
+  .cta h2{font-size:clamp(36px,5vw,60px);font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:16px}
+  .cta p{color:var(--dim);font-size:15px;margin-bottom:48px}
+  .cta-links{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+  .btn-primary{display:inline-flex;align-items:center;gap:12px;background:var(--accent);color:#000;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:3px;padding:18px 40px;text-decoration:none;font-weight:700;transition:all 0.2s;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)}
+  .btn-primary:hover{background:#fff;transform:translateY(-2px);box-shadow:0 0 40px rgba(0,255,224,0.4)}
+  .btn-ghost{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-decoration:none;border:1px solid rgba(0,255,224,0.2);padding:14px 28px;transition:all 0.2s}
+  .btn-ghost:hover{border-color:var(--accent);background:rgba(0,255,224,0.05)}
+  footer{border-top:1px solid var(--border);padding:28px 48px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2}
+  .footer-logo{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--accent);letter-spacing:4px;opacity:0.4}
+  .footer-copy{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+  .cursor{display:inline-block;width:8px;height:18px;background:var(--accent);animation:blink 1s infinite;vertical-align:middle;margin-left:6px}
+  @media(max-width:768px){nav{padding:16px 24px}.nav-links{display:none}.platforms{flex-direction:column}.features,.requirements,.cta{padding:60px 24px}.stats{flex-direction:column}.stat{border-right:none;border-bottom:1px solid var(--border)}.stat:last-child{border-bottom:none}footer{flex-direction:column;gap:12px;text-align:center}}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<nav>
+  <a href="#" class="logo">SENTINEL</a>
+  <div class="nav-links">
+    <a class="nav-link" href="https://sentinel-two-beta.vercel.app" target="_blank">LIVE DEMO</a>
+    <a class="nav-link" href="https://github.com/sarthakNaikare/sentinel" target="_blank">GITHUB</a>
+    <a class="nav-link" href="https://sentinel-production-b4c7.up.railway.app/health" target="_blank">API STATUS</a>
+  </div>
+</nav>
+<main>
+  <section class="hero">
+    <div class="hero-label">THREAT INTELLIGENCE ENGINE</div>
+    <h1 class="hero-title">SENTI<span>NEL</span></h1>
+    <div class="hero-version">RELEASE v0.1.5 — STABLE // ALL PLATFORMS</div>
+    <p class="hero-desc">TimescaleDB-native CVE intelligence. 456,999 vulnerabilities indexed. Real-time EPSS scoring. KEV tracking. AI-powered remediation.</p>
+    <div class="platforms">
+      <a class="platform-card" href="https://github.com/sarthakNaikare/sentinel/releases/download/v0.1.5/SENTINEL-0.1.0.AppImage">
+        <span class="p-icon">🐧</span>
+        <span class="p-name">LINUX</span>
+        <span class="p-file">SENTINEL-0.1.0.AppImage</span>
+        <span class="p-badge">✓ 108 MB</span>
+      </a>
+      <a class="platform-card" href="https://github.com/sarthakNaikare/sentinel/releases/download/v0.1.5/SENTINEL+Setup+0.1.0.exe">
+        <span class="p-icon">🪟</span>
+        <span class="p-name">WINDOWS</span>
+        <span class="p-file">SENTINEL Setup 0.1.0.exe</span>
+        <span class="p-badge">✓ 81.9 MB</span>
+      </a>
+      <a class="platform-card" href="https://github.com/sarthakNaikare/sentinel/releases/download/v0.1.5/SENTINEL-0.1.0-arm64.dmg">
+        <span class="p-icon">🍎</span>
+        <span class="p-name">MACOS</span>
+        <span class="p-file">SENTINEL-0.1.0-arm64.dmg</span>
+        <span class="p-badge">✓ 101 MB</span>
+      </a>
+    </div>
+    <div class="file-meta">v0.1.5 &nbsp;·&nbsp; <span>Electron 36</span> &nbsp;·&nbsp; Keygen Licensed</div>
+    <div class="stats">
+      <div class="stat"><span class="stat-val">456,999</span><span class="stat-label">CVEs Indexed</span></div>
+      <div class="stat"><span class="stat-val">1,969</span><span class="stat-label">KEV Tracked</span></div>
+      <div class="stat"><span class="stat-val">108K+</span><span class="stat-label">EPSS Scored</span></div>
+      <div class="stat"><span class="stat-val">88%</span><span class="stat-label">Compression</span></div>
+    </div>
+  </section>
+  <section class="features">
+    <div class="section-label">CAPABILITIES</div>
+    <div class="features-grid">
+      <div class="feature"><div class="feature-num">01 // DATABASE</div><h3>TimescaleDB Native</h3><p>Hypertable-powered time-series storage with continuous aggregates. 88% compression on 456K CVE records. Sub-second queries on massive datasets.</p></div>
+      <div class="feature"><div class="feature-num">02 // SCORING</div><h3>EPSS + CVSS Intelligence</h3><p>Real-time exploit probability scoring with EPSS trajectories. Carbon dating reveals CVE exposure age and exploitation velocity.</p></div>
+      <div class="feature"><div class="feature-num">03 // KEV</div><h3>Known Exploited Vulns</h3><p>CISA KEV integration with attack chain detection. Correlates vulnerabilities exploited within 3-day windows to surface coordinated campaigns.</p></div>
+      <div class="feature"><div class="feature-num">04 // AI</div><h3>AI Remediation</h3><p>Claude-powered remediation guidance for any CVE. Context-aware patching recommendations and mitigation strategies in seconds.</p></div>
+      <div class="feature"><div class="feature-num">05 // VISUAL</div><h3>D3.js Threat Heatmap</h3><p>Live threat heatmaps, attack chain force graphs, and EPSS trend charts. Real-time dashboard with 24-hour rolling windows.</p></div>
+      <div class="feature"><div class="feature-num">06 // DESKTOP</div><h3>Cross-Platform Desktop</h3><p>Native Electron app for Linux, Windows, and macOS. Keygen license management built-in. Single binary, zero external dependencies.</p></div>
+    </div>
+  </section>
+  <section class="requirements">
+    <div class="section-label">SYSTEM REQUIREMENTS</div>
+    <div class="req-grid">
+      <div class="req-item"><span class="req-key">LINUX</span><span class="req-val">Ubuntu 20.04+ / x86_64</span></div>
+      <div class="req-item"><span class="req-key">WINDOWS</span><span class="req-val">Windows 10+ / x64</span></div>
+      <div class="req-item"><span class="req-key">MACOS</span><span class="req-val">macOS 12+ / ARM64</span></div>
+      <div class="req-item"><span class="req-key">RUNTIME</span><span class="req-val">Self-contained</span></div>
+      <div class="req-item"><span class="req-key">LICENSE</span><span class="req-val">Keygen Required</span></div>
+      <div class="req-item"><span class="req-key">NETWORK</span><span class="req-val">Internet for live data</span></div>
+    </div>
+  </section>
+  <section class="cta">
+    <h2>Start Monitoring<span class="cursor"></span></h2>
+    <p>Live API and dashboard deployed. Desktop app available on all platforms.</p>
+    <div class="cta-links">
+      <a class="btn-primary" href="https://sentinel-two-beta.vercel.app" target="_blank">LIVE DASHBOARD</a>
+      <a class="btn-ghost" href="https://github.com/sarthakNaikare/sentinel/releases/tag/v0.1.5" target="_blank">ALL RELEASES →</a>
+      <a class="btn-ghost" href="https://github.com/sarthakNaikare/sentinel" target="_blank">GITHUB →</a>
+    </div>
+  </section>
+</main>
+<footer>
+  <span class="footer-logo">SENTINEL</span>
+  <span class="footer-copy">© 2026 SARTHAK NAIKARE // MIT LICENSE</span>
+</footer>
+</body>
+</html>
