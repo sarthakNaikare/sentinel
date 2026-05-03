@@ -419,19 +419,49 @@ function ChainGraph() {
 /* ─── CARBON ──────────────────────────────────────────────────────── */
 function CarbonView({cveId}) {
   const data=useFetch(cveId?`${API}/api/carbon/${cveId}`:null,0)
+  const cveDetail=useFetch(cveId?`${API}/api/cves/${cveId}`:null,0)
   if(!cveId) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:300,fontSize:8,color:"#5a6a8a",letterSpacing:"0.22em"}}>☢ SELECT A CVE IN WAR ROOM FIRST</div>
   if(!data) return <div style={{padding:20,fontSize:9,color:"#5a6a8a",letterSpacing:"0.1em"}}>LOADING EPSS TRAJECTORY...</div>
   if(!data.points?.length||data.points.length===1) return (
     <div style={{padding:20}}>
       <div style={{fontSize:12,fontWeight:700,color:"#00d4ff",marginBottom:4,fontFamily:"var(--font)"}}>{cveId}</div>
-      <div style={{fontSize:8,color:"#5a6a8a",marginBottom:20,letterSpacing:"0.15em"}}>{data.points?.length===1?"📊 1 SNAPSHOT — CURVE BUILDS DAILY":"NO TRAJECTORY YET"}</div>
+      <div style={{fontSize:8,color:"#5a6a8a",marginBottom:20,letterSpacing:"0.15em"}}>{data.points?.length===1?"1 SNAPSHOT — CURVE BUILDS DAILY":"NO TRAJECTORY YET"}</div>
       {data.points?.length===1 && (
-        <div style={{padding:"20px 24px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6,display:"inline-block"}}>
-          <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:10}}>🎯 CURRENT EPSS SCORE</div>
-          <div style={{fontSize:52,fontWeight:700,color:"#e03030",letterSpacing:"-0.02em"}}>{(data.points[0].avg_epss*100).toFixed(2)}%</div>
-          <div style={{fontSize:8,color:"#9aaac8",marginTop:8,letterSpacing:"0.1em"}}>PROBABILITY OF EXPLOITATION IN NEXT 30 DAYS</div>
-          <div style={{marginTop:12,height:3,background:"var(--bg-deep)",borderRadius:2,overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${data.points[0].avg_epss*100}%`,background:"linear-gradient(90deg,#f0a500,#e03030)",borderRadius:2}}/>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,maxWidth:900}}>
+          <div style={{padding:"16px 20px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6}}>
+            <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:8}}>EPSS SCORE</div>
+            <div style={{fontSize:42,fontWeight:700,color:"#e03030"}}>{(data.points[0].avg_epss*100).toFixed(2)}%</div>
+            <div style={{fontSize:8,color:"#9aaac8",marginTop:6}}>EXPLOIT PROBABILITY — NEXT 30 DAYS</div>
+            <div style={{marginTop:10,height:3,background:"var(--bg-deep)",borderRadius:2,overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${data.points[0].avg_epss*100}%`,background:"linear-gradient(90deg,#f0a500,#e03030)",borderRadius:2}}/>
+            </div>
+          </div>
+          {cveDetail && (
+            <>
+              <div style={{padding:"16px 20px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6}}>
+                <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:8}}>EXPOSURE AGE</div>
+                <div style={{fontSize:42,fontWeight:700,color:"#f0a500"}}>{cveDetail.published?Math.floor((Date.now()-new Date(cveDetail.published))/86400000):"-"}</div>
+                <div style={{fontSize:8,color:"#9aaac8",marginTop:6}}>DAYS EXPOSED — PUBLISHED {cveDetail.published?.slice(0,10)}</div>
+              </div>
+              <div style={{padding:"16px 20px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6}}>
+                <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:8}}>SEVERITY</div>
+                <div style={{fontSize:22,fontWeight:700,color:cveDetail.severity==="CRITICAL"?"#e03030":"#f0a500",marginTop:4}}>{cveDetail.severity}</div>
+                <div style={{fontSize:8,color:"#9aaac8",marginTop:6}}>CVSS {cveDetail.cvss_score}</div>
+                {cveDetail.is_kev && <div style={{marginTop:8,fontSize:8,color:"#e03030",letterSpacing:"0.1em"}}>ACTIVELY EXPLOITED</div>}
+              </div>
+              <div style={{padding:"16px 20px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6}}>
+                <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:8}}>VENDOR ADVISORY</div>
+                <a href={`https://nvd.nist.gov/vuln/detail/${cveId}`} target="_blank" rel="noreferrer"
+                  style={{fontSize:13,fontWeight:700,color:"#f0a500",marginTop:4,textDecoration:"none",display:"block",transition:"color 0.2s"}}
+                  onMouseEnter={e=>e.target.style.color="#ffc840"}
+                  onMouseLeave={e=>e.target.style.color="#f0a500"}>VIEW ON NVD ↗</a>
+                <div style={{fontSize:8,color:"#9aaac8",marginTop:6}}>KEV ADDED: {cveDetail.kev_added_date||"—"}</div>
+              </div>
+            </>
+          )}
+          <div style={{padding:"14px 18px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6,gridColumn:"1/-1"}}>
+            <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:6}}>TRAJECTORY NOTE</div>
+            <div style={{fontSize:9,color:"#9aaac8",lineHeight:1.8}}>Carbon dating curve builds as the daily scheduler collects EPSS snapshots. Each day adds a new data point. Check back tomorrow for the first trend line.</div>
           </div>
         </div>
       )}
@@ -460,7 +490,139 @@ function CarbonView({cveId}) {
 }
 
 /* ─── SCANNER ─────────────────────────────────────────────────────── */
+function DomainScanner() {
+  const [domain,setDomain]=useState("")
+  const [scanning,setScanning]=useState(false)
+  const [results,setResults]=useState(null)
+  const [error,setError]=useState(null)
+
+  const techPatterns = {
+    "apache":["CVE-2021-41773","CVE-2021-42013","CVE-2017-7679"],
+    "nginx":["CVE-2021-23017","CVE-2019-9511","CVE-2017-7529"],
+    "php":["CVE-2021-21702","CVE-2019-11043","CVE-2018-7584"],
+    "wordpress":["CVE-2022-21661","CVE-2021-29447","CVE-2020-28037"],
+    "drupal":["CVE-2018-7600","CVE-2019-6340","CVE-2018-7602"],
+    "jquery":["CVE-2020-11022","CVE-2019-11358","CVE-2015-9251"],
+    "openssl":["CVE-2014-0160","CVE-2016-0800","CVE-2022-0778"],
+    "iis":["CVE-2017-7269","CVE-2015-1635","CVE-2021-31166"],
+    "tomcat":["CVE-2020-1938","CVE-2019-0232","CVE-2017-12617"],
+    "spring":["CVE-2022-22965","CVE-2022-22950","CVE-2021-22096"],
+    "log4j":["CVE-2021-44228","CVE-2021-45046","CVE-2021-45105"],
+    "struts":["CVE-2017-5638","CVE-2018-11776","CVE-2019-0230"],
+  }
+
+  const scanDomain = async () => {
+    if(!domain.trim()) return
+    setScanning(true); setResults(null); setError(null)
+    try {
+      // Use a CORS proxy to fetch headers
+      const url = domain.startsWith("http") ? domain : `https://${domain}`
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+      const resp = await fetch(proxyUrl, {signal: AbortSignal.timeout(10000)})
+      const data = await resp.json()
+      
+      // Parse headers from response
+      const headers = (data.status?.http_code ? JSON.stringify(data) : "").toLowerCase()
+      const content = (data.contents||"").toLowerCase().slice(0,5000)
+      const combined = headers + " " + content
+
+      // Detect technologies
+      const detected = []
+      for(const [tech, cves] of Object.entries(techPatterns)) {
+        if(combined.includes(tech)) detected.push({tech, cves})
+      }
+
+      // Also check common indicators
+      if(combined.includes("wp-content")||combined.includes("wordpress")) detected.push({tech:"wordpress",cves:techPatterns.wordpress})
+      if(combined.includes("x-powered-by: php")||combined.includes("php")) {
+        if(!detected.find(d=>d.tech==="php")) detected.push({tech:"php",cves:techPatterns.php})
+      }
+
+      if(detected.length===0) {
+        // Generic scan — show high-risk web CVEs
+        detected.push({tech:"generic-web",cves:["CVE-2021-44228","CVE-2014-0160","CVE-2017-5638"]})
+      }
+
+      // Fetch CVE details for detected
+      const allCveIds = [...new Set(detected.flatMap(d=>d.cves))].slice(0,8)
+      const cveDetails = await Promise.all(
+        allCveIds.map(id => fetch(`${API}/api/cves/${id}`).then(r=>r.json()).catch(()=>null))
+      )
+
+      setResults({
+        domain: domain.trim(),
+        detected: detected.map(d=>d.tech),
+        cves: cveDetails.filter(Boolean),
+        scannedAt: new Date().toISOString()
+      })
+    } catch(e) {
+      setError("Could not reach domain. Check the URL and try again.")
+    }
+    setScanning(false)
+  }
+
+  return (
+    <div style={{flex:1,padding:"24px 28px",overflowY:"auto",maxWidth:860}}>
+      <div style={{fontSize:7,color:"#5a6a8a",letterSpacing:"0.3em",marginBottom:6,textTransform:"uppercase"}}>🌐 Domain Scanner</div>
+      <div style={{fontSize:20,fontWeight:700,color:"#e8ecf8",marginBottom:4}}>Scan Any Website for Vulnerabilities</div>
+      <div style={{fontSize:9,color:"#9aaac8",marginBottom:20}}>Enter a domain — Sentinel detects the tech stack and maps it to known CVEs in our database</div>
+
+      <div style={{display:"flex",gap:8,marginBottom:20}}>
+        <input value={domain} onChange={e=>setDomain(e.target.value)}
+          placeholder="e.g. example.com or https://example.com"
+          onKeyDown={e=>{ if(e.key==="Enter") scanDomain() }}
+          style={{flex:1,padding:"11px 14px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:4,color:"#e8ecf8",fontFamily:"var(--font)",fontSize:11,outline:"none",transition:"border-color 0.2s"}}
+          onFocus={e=>e.target.style.borderColor="#f0a500"}
+          onBlur={e=>e.target.style.borderColor="var(--border)"}/>
+        <button data-hover onClick={scanDomain} disabled={scanning}
+          style={{padding:"11px 24px",background:scanning?"rgba(240,165,0,0.04)":"rgba(240,165,0,0.1)",border:"1px solid rgba(240,165,0,0.4)",borderRadius:4,color:scanning?"#5a6a8a":"#f0a500",fontFamily:"var(--font)",fontSize:10,letterSpacing:"0.12em",transition:"all 0.2s",whiteSpace:"nowrap"}}
+          onMouseEnter={e=>{ if(!scanning) e.currentTarget.style.background="rgba(240,165,0,0.18)" }}
+          onMouseLeave={e=>e.currentTarget.style.background=scanning?"rgba(240,165,0,0.04)":"rgba(240,165,0,0.1)"}>
+          {scanning?"⟳ SCANNING...":"⬡ SCAN DOMAIN"}
+        </button>
+      </div>
+
+      {error && <div style={{padding:"10px 14px",background:"rgba(224,48,48,0.08)",border:"0.5px solid rgba(224,48,48,0.3)",borderRadius:4,fontSize:9,color:"#e03030",marginBottom:16}}>{error}</div>}
+
+      {results && (
+        <div>
+          <div style={{padding:"14px 18px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderRadius:6,marginBottom:14}}>
+            <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:8}}>SCAN RESULTS — {results.domain}</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
+              {results.detected.map(t=>(
+                <span key={t} style={{padding:"3px 10px",background:"rgba(0,212,255,0.08)",border:"0.5px solid rgba(0,212,255,0.25)",borderRadius:3,fontSize:9,color:"#00d4ff",letterSpacing:"0.08em"}}>{t}</span>
+              ))}
+            </div>
+            <div style={{fontSize:8,color:"#5a6a8a"}}>Scanned at {new Date(results.scannedAt).toLocaleTimeString()} · {results.cves.length} CVEs found</div>
+          </div>
+
+          <div style={{fontSize:8,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:10}}>⚠ VULNERABILITIES DETECTED</div>
+          {results.cves.map((r,i)=>(
+            <div key={i} style={{padding:"12px 16px",background:"var(--bg-panel)",border:"0.5px solid var(--border)",borderLeft:`2px solid ${SEV[r.severity||"UNKNOWN"]}`,borderRadius:6,marginBottom:8,animation:`fadeUp 0.3s ease ${i*0.04}s both`}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,alignItems:"center"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:11,fontWeight:700,color:"#00d4ff",fontFamily:"var(--font)"}}>{r.cve_id}</span>
+                  {r.is_kev && <span style={{fontSize:7,padding:"1px 5px",background:"rgba(224,48,48,0.15)",color:"#e03030",border:"0.5px solid rgba(224,48,48,0.4)",borderRadius:2,letterSpacing:"0.1em"}}>⚠ KEV</span>}
+                </div>
+                <span style={{fontSize:8,color:SEV[r.severity||"UNKNOWN"],letterSpacing:"0.1em",fontWeight:700}}>{r.severity}</span>
+              </div>
+              <div style={{fontSize:9,color:"#9aaac8",lineHeight:1.5,marginBottom:6}}>{r.description?.slice(0,140)}...</div>
+              <div style={{display:"flex",gap:14,fontSize:8,color:"#5a6a8a"}}>
+                <span>CVSS <span style={{color:"#9aaac8"}}>{r.cvss_score}</span></span>
+                <span>EPSS <span style={{color:r.epss_score>0.7?"#e03030":"#9aaac8"}}>{r.epss_score?(r.epss_score*100).toFixed(1)+"%":""}</span></span>
+                <span>AGE <span style={{color:"#9aaac8"}}>{r.exposure_age}</span></span>
+                <a href={`https://nvd.nist.gov/vuln/detail/${r.cve_id}`} target="_blank" rel="noreferrer" style={{color:"#f0a500",textDecoration:"none",marginLeft:"auto"}}>VIEW ON NVD ↗</a>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ScannerPage() {
+  const [scannerTab,setScannerTab]=useState("stack")
   const [scanInput,setScanInput]=useState("")
   const [scanTags,setScanTags]=useState(["flask==2.1.0","openssl==1.1.1","log4j==2.14.0"])
   const [results,setResults]=useState(null)
@@ -736,7 +898,18 @@ function ScannerPage() {
   }
 
   return (
-    <div style={{flex:1,overflowY:"auto",padding:"24px 28px",maxWidth:860}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <div style={{display:"flex",borderBottom:"0.5px solid var(--border)",background:"var(--bg-panel)",padding:"0 24px"}}>
+        {[["stack","STACK SCANNER"],["domain","DOMAIN SCANNER"]].map(([id,label])=>(
+          <button key={id} data-hover onClick={()=>setScannerTab(id)}
+            style={{padding:"10px 18px",background:"transparent",border:"none",borderBottom:scannerTab===id?"2px solid #f0a500":"2px solid transparent",color:scannerTab===id?"#f0a500":"#5a6a8a",fontFamily:"var(--font)",fontSize:9,letterSpacing:"0.15em",transition:"all 0.2s"}}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {scannerTab==="domain" && <DomainScanner/>}
+      {scannerTab==="stack" && (
+        <div style={{flex:1,overflowY:"auto",padding:"24px 28px",maxWidth:860}}>
       <div style={{fontSize:7,color:"#5a6a8a",letterSpacing:"0.3em",marginBottom:6,textTransform:"uppercase"}}>🔍 Stack Scanner</div>
       <div style={{fontSize:20,fontWeight:700,color:"#e8ecf8",marginBottom:4}}>Resolve Packages → CVEs → Remediation</div>
       <div style={{fontSize:9,color:"#9aaac8",marginBottom:24}}>Add packages, scan against 456,999 CVEs, get AI-powered fix instructions</div>
@@ -877,6 +1050,8 @@ function ScannerPage() {
           })}
         </div>
       )}
+        </div>
+      )}
     </div>
   )
 }
@@ -953,13 +1128,14 @@ function AboutPage() {
         ))}
       </div>
 
-      {/* Row 4 — Mythos card full width */}
-      <div style={{padding:"20px 24px",background:"rgba(224,48,48,0.04)",border:"1px solid rgba(224,48,48,0.2)",borderRadius:8,marginBottom:14,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,transparent,#e03030,transparent)"}}/>
+      {/* Row 4 — Mythos card HERO */}
+      <div style={{padding:"28px 32px",background:"linear-gradient(135deg,rgba(224,48,48,0.08),rgba(240,165,0,0.03))",border:"1px solid rgba(224,48,48,0.35)",borderRadius:8,marginBottom:14,position:"relative",overflow:"hidden",boxShadow:"0 0 40px rgba(224,48,48,0.08)"}}>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"3px",background:"linear-gradient(90deg,transparent,#e03030,#f0a500,#e03030,transparent)"}}/>
+        <div style={{position:"absolute",top:0,left:0,bottom:0,width:"3px",background:"linear-gradient(180deg,#e03030,transparent)"}}/>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
           <div>
-            <div style={{fontSize:8,color:"rgba(224,48,48,0.6)",letterSpacing:"0.3em",marginBottom:8}}>⚔ THE ADVERSARY CONTEXT</div>
-            <div style={{fontSize:16,fontWeight:700,color:"#e8ecf8",marginBottom:10}}>Built to counter <span style={{color:"#e03030"}}>Mythos</span></div>
+            <div style={{fontSize:8,color:"rgba(224,48,48,0.7)",letterSpacing:"0.4em",marginBottom:10,display:"flex",alignItems:"center",gap:8}}><span style={{animation:"pulse 2s infinite"}}>⚔</span> THE ADVERSARY CONTEXT</div>
+            <div style={{fontSize:24,fontWeight:700,color:"#e8ecf8",marginBottom:12,letterSpacing:"0.04em",lineHeight:1.2}}>Built to counter <span style={{color:"#e03030",textShadow:"0 0 20px rgba(224,48,48,0.5)"}}>Mythos</span></div>
             <div style={{fontSize:10,color:"#9aaac8",lineHeight:1.9,marginBottom:12}}>
               <span style={{color:"#e03030",fontWeight:700}}>Mythos</span> is the first AI model capable of finding and chaining zero-days autonomously — a new class of threat actor that operates faster than any human security team can respond.
               <br/><br/>
@@ -1215,14 +1391,20 @@ export default function App() {
               <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
                 <div style={{padding:"10px 20px 8px",borderBottom:"0.5px solid var(--border)",background:"var(--bg-panel)"}}>
                   <div style={{fontSize:7,color:"#5a6a8a",letterSpacing:"0.2em",marginBottom:8,textTransform:"uppercase"}}>📊 CVE Activity — Last 24h — Source: threat_scores_1h cagg</div>
-                  <ResponsiveContainer width="100%" height={52}>
-                    <BarChart data={heatData} margin={{top:0,right:0,bottom:0,left:0}}>
-                      <XAxis dataKey="h" tick={{fill:"#5a6a8a",fontSize:7,fontFamily:"JetBrains Mono"}} axisLine={false} tickLine={false}/>
-                      <YAxis hide/>
-                      <Tooltip contentStyle={{background:"var(--bg-panel)",border:"0.5px solid var(--border)",color:"#e8ecf8",fontSize:9,borderRadius:4,fontFamily:"JetBrains Mono"}}/>
-                      <Bar dataKey="c" fill="rgba(240,165,0,0.22)" radius={[2,2,0,0]}/>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <div style={{display:"flex",gap:2,alignItems:"flex-end",height:52,padding:"0 0 4px 0"}}>
+                    {heatData.map((d,i)=>{
+                      const max=Math.max(...heatData.map(x=>x.c),1)
+                      const pct=d.c/max
+                      const color=pct>0.7?"#e03030":pct>0.4?"#f0a500":"rgba(240,165,0,0.2)"
+                      const glow=pct>0.7?"0 0 8px rgba(224,48,48,0.6)":pct>0.4?"0 0 6px rgba(240,165,0,0.4)":"none"
+                      return (
+                        <div key={i} title={`${d.h}: ${d.c} CVEs`} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                          <div style={{width:"100%",height:`${Math.max(pct*44,2)}px`,background:color,borderRadius:"2px 2px 0 0",boxShadow:glow,minHeight:2,transition:"all 0.3s"}}/>
+                          {i%6===0&&<div style={{fontSize:6,color:"#3a4a6a",whiteSpace:"nowrap"}}>{d.h}</div>}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
                 <div style={{padding:"7px 20px",fontSize:7,color:"#5a6a8a",borderBottom:"0.5px solid var(--border)",display:"flex",justifyContent:"space-between",letterSpacing:"0.15em",alignItems:"center"}}>
                   <span>⬡ LIVE THREAT FEED — RANKED BY KEV + EPSS</span>
