@@ -24,7 +24,12 @@
     },
     "mac": {
       "target": "dmg"
-    }
+    },
+    "files": [
+      "main.js",
+      "dist/**",
+      "node_modules/**"
+    ]
   },
   "devDependencies": {
     "electron": "^36.0.0",
