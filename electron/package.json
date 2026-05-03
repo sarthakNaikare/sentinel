@@ -29,5 +29,9 @@
   "devDependencies": {
     "electron": "^36.0.0",
     "electron-builder": "^26.0.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sarthakNaikare/sentinel.git"
   }
 }
