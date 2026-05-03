@@ -9,7 +9,7 @@ let apiProcess
 function waitForApi(retries = 30) {
   return new Promise((resolve, reject) => {
     const check = (n) => {
-      http.get('http://localhost:5184/health', (res) => {
+      http.get('https://sentinel-production-b4c7.up.railway.app/health', (res) => {
         if (res.statusCode === 200) resolve()
         else if (n > 0) setTimeout(() => check(n - 1), 1000)
         else reject(new Error('API did not start'))
